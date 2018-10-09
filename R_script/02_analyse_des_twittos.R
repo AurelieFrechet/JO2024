@@ -5,6 +5,9 @@
 
 # Library
 library(dplyr)
+library(Factoshiny)
+
+# 1- Creation de la base d'étude ------------------------------------------
 
 data_publishers <- data_tweets %>%
   group_by(
@@ -13,6 +16,7 @@ data_publishers <- data_tweets %>%
     publisher_nickname,
     publisher_location,
     publisher_description,
+    description,
     publisher_declared_language,
     publisher_account_creation_dt
   ) %>%
@@ -28,3 +32,13 @@ data_publishers <- data_tweets %>%
     jo2024_total_retweet   = sum(tweet_retweet_count),
     jo2024_total_favorites = sum(tweet_favorite_count)
   )
+
+
+# 2 - L'analyse de la flemme ----------------------------------------------
+
+PCAshiny(data_publishers)
+individus_hors_normes <- c(7429, 478, 5392)
+View(data_publishers[individus_hors_normes, ]) # description = NA ? Impossible normalement =>> à vérifier
+
+PCAshiny(data_publishers[-individus_hors_normes,])
+individus_hors_normes2 <- c(9068, 460)
