@@ -1,0 +1,32 @@
+Workshop du 09/10/2018
+envoi du fichier descriptions.csv dès demain
+
+1 - Collecte des tweets
+via l'API prenium de twitter
+via Python
+pas de retweet
+attention plafond à 500 tweets/jour
+
+2-analyse
+tokeniseur : plus petite unité de la phrase
+lemmatisation : forme canonique (textstem)
+racinisation : garde la racine du mot
+
+Remplacement des hastags par le contenu avec un espace :) (#merciBenedicte)
+
+bag of words
+TF IDF :donne un poids au document
+idf : enleve le poids auxmots qui apparaissentdans tous les tweets (jo2024)
+facile à implémenter soi même
+representer les tweets de façon vectorielle
+représenter les mots de façon vectorielle
+
+
+4. topic modeling
+clustering de tweets ?
+
+comment traiter : un angle d'attaque pour ne pas se perdre 
+resistitution assez visuelle
+exliquer variables créées
+résultats obtenus
+qu'est ce qu'on a fait avec les données
