@@ -44,11 +44,11 @@ data_tweets$corpus <-
 data_tweets$corpus <-
   tolower(data_tweets$corpus)  
 
-# Retire les hashtags
-data_tweets$corpus <-
-  gsub(pattern = " #\\S*",
-       replacement = "",
-       x = data_tweets$corpus) 
+# Retire les hashtags - MAJ : enleve des mots clés
+# data_tweets$corpus <-
+#   gsub(pattern = " #\\S*",
+#        replacement = "",
+#        x = data_tweets$corpus) 
 
 # Retire les URLs (http, https, ftp)
 data_tweets$corpus <-
@@ -70,6 +70,51 @@ data_tweets$corpus <-
     x = str_trim(data_tweets$corpus)
   ), "B", "b")
 
-data_tweets$tweet_text[1:10]
-data_tweets$corpus[1:10] 
 
+
+# Nettoyage description du Twittos ----------------------------------------
+
+# Mise en UTF-8
+data_tweets$description <-   enc2utf8(data_tweets$publisher_description)
+
+# Retire les emojis
+data_tweets$description <-
+  str_replace_all(string = data_tweets$description,
+                  pattern = "[^[:graph:]]",
+                  replacement = " ")  
+
+# Retire les accents
+data_tweets$description <-
+  iconv(x = data_tweets$description,
+        from = "UTF-8",
+        to = "ASCII//TRANSLIT") 
+
+# Mise en minuscule
+data_tweets$description <-
+  tolower(data_tweets$description)  
+
+# Retire les hashtags - MAJ : enleve des mots clés
+# data_tweets$description <-
+#   gsub(pattern = " #\\S*",
+#        replacement = "",
+#        x = data_tweets$description) 
+
+# Retire les URLs (http, https, ftp)
+data_tweets$description <-
+  gsub(pattern = "(f|ht)(tp)(s?)(://)(\\S*)",
+       replacement = "",
+       x = data_tweets$description)     
+
+# Retire les caractères spéciaux
+data_tweets$description <-
+  gsub(pattern = "[^0-9A-Za-z///' ]",
+       replacement = "",
+       x = data_tweets$description)     
+
+# Enlever les espaces en trop
+data_tweets$description <-
+  str_replace(gsub(
+    pattern = "\\s+",
+    replacement = " ",
+    x = str_trim(data_tweets$description)
+  ), "B", "b")
