@@ -37,8 +37,28 @@ data_publishers <- data_tweets %>%
 # 2 - L'analyse de la flemme ----------------------------------------------
 
 PCAshiny(data_publishers)
-individus_hors_normes <- c(7429, 478, 5392)
+individus_hors_normes <- c(7429, 478, 5392, 9071, 460, 6767)
 View(data_publishers[individus_hors_normes, ]) # description = NA ? Impossible normalement =>> à vérifier
 
 PCAshiny(data_publishers[-individus_hors_normes,])
-individus_hors_normes2 <- c(9068, 460)
+individus_hors_normes2 <- c(9071, 460, 6767)
+
+
+# 3 - Ajout de variables booléennes  --------------------------------------
+
+# Présence du mot "officiel" dans la description
+data_publishers$officiel <- FALSE
+data_publishers[grep(pattern = "officiel", x = data_publishers$description), "officiel"] <- TRUE
+
+# Présence du mot "actu" dans la description
+data_publishers$actu <- FALSE
+data_publishers[grep(pattern = "actu", x = data_publishers$description), "actu"] <- TRUE
+
+# Présence du mot "sport" dans la description
+data_publishers$sport <- FALSE
+data_publishers[grep(pattern = "sport", x = data_publishers$description), "sport"] <- TRUE
+
+# Présence du mot "journalist" dans la description
+data_publishers$journalist <- FALSE
+data_publishers[grep(pattern = "journalist", x = data_publishers$journalist), "journalist"] <- TRUE
+
