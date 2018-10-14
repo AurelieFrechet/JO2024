@@ -26,95 +26,27 @@ data_tweets$mentions <- gsub("[[:punct:]]", "", data_tweets$tweet_user_mentions_
 # source : https://rstudio-pubs-static.s3.amazonaws.com/93384_92b6fcd92c5642a2a52e97cd5694b6ab.html
 
 # Mise en UTF-8
-data_tweets$corpus <-   enc2utf8(data_tweets$tweet_text)
+data_tweets$corpus <- nettoyage_text(data_tweets$tweet_text)
 
-# Retire les emojis
-data_tweets$corpus <-
-  str_replace_all(string = data_tweets$corpus,
-                  pattern = "[^[:graph:]]",
-                  replacement = " ")  
-
-# Retire les accents
-data_tweets$corpus <-
-  iconv(x = data_tweets$corpus,
-        from = "UTF-8",
-        to = "ASCII//TRANSLIT") 
-
-# Mise en minuscule
-data_tweets$corpus <-
-  tolower(data_tweets$corpus)  
-
-# Retire les hashtags - MAJ : enleve des mots clés
-# data_tweets$corpus <-
-#   gsub(pattern = " #\\S*",
-#        replacement = "",
-#        x = data_tweets$corpus) 
-
-# Retire les URLs (http, https, ftp)
-data_tweets$corpus <-
-  gsub(pattern = "(f|ht)(tp)(s?)(://)(\\S*)",
-       replacement = "",
-       x = data_tweets$corpus)     
-
-# Retire les caractères spéciaux
-data_tweets$corpus <-
-  gsub(pattern = "[^0-9A-Za-z///' ]",
-       replacement = "",
-       x = data_tweets$corpus)     
-
-# Enlever les espaces en trop
-data_tweets$corpus <-
-  str_replace(gsub(
-    pattern = "\\s+",
-    replacement = " ",
-    x = str_trim(data_tweets$corpus)
-  ), "B", "b")
-
-
+View(data_tweets[, c(5,54)])
 
 # Nettoyage description du Twittos ----------------------------------------
+data_tweets$description <- nettoyage_text(data_tweets$publisher_description)
 
-# Mise en UTF-8
-data_tweets$description <-   enc2utf8(data_tweets$publisher_description)
+# Recherche méthodo -------------------------------------------------------
 
-# Retire les emojis
-data_tweets$description <-
-  str_replace_all(string = data_tweets$description,
-                  pattern = "[^[:graph:]]",
-                  replacement = " ")  
 
-# Retire les accents
-data_tweets$description <-
-  iconv(x = data_tweets$description,
-        from = "UTF-8",
-        to = "ASCII//TRANSLIT") 
+library(quanteda)
+txt <- c(doc1 = "Anne Hidalgo pourrait accepter les Jeux Olympiques à Paris @LaTribune #JO2024 @Anne_Hidalgo  http://t.co/yxhVf2AQ5h",
+         doc2 = "#JO2024: 4,7 milliards de dollars de budget pour Bostonhttp://t.co/IXy4PQnkAX #ambitionolympique par @LesEchos http://t.co/YzjWgHKXmx",
+         doc3 = "\"#GrandParis Amsalem : \"\"Paris n’est pas prêt pour 2024\"\" http://t.co/rx7tpuxhIc #JO2024\"")
+tokens(txt)
+# removing punctuation marks and lowecasing texts
+file <- tokens(char_tolower(txt),
+       remove_punct = TRUE,
+       remove_separators =TRUE,
+       remove_symbols = TRUE,
+       remove_twitter= TRUE,
+       remove_url = TRUE)
 
-# Mise en minuscule
-data_tweets$description <-
-  tolower(data_tweets$description)  
 
-# Retire les hashtags - MAJ : enleve des mots clés
-# data_tweets$description <-
-#   gsub(pattern = " #\\S*",
-#        replacement = "",
-#        x = data_tweets$description) 
-
-# Retire les URLs (http, https, ftp)
-data_tweets$description <-
-  gsub(pattern = "(f|ht)(tp)(s?)(://)(\\S*)",
-       replacement = "",
-       x = data_tweets$description)     
-
-# Retire les caractères spéciaux
-data_tweets$description <-
-  gsub(pattern = "[^0-9A-Za-z///' ]",
-       replacement = "",
-       x = data_tweets$description)     
-
-# Enlever les espaces en trop
-data_tweets$description <-
-  str_replace(gsub(
-    pattern = "\\s+",
-    replacement = " ",
-    x = str_trim(data_tweets$description)
-  ), "B", "b")
