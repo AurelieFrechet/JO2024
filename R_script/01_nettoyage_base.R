@@ -4,15 +4,20 @@
 library(readr)   # Chargement des données
 library(tm)      # Nettoyage du corpus
 library(stringr) # Nettoyage des chaines de caractères
+library(koRpus)
 
 chemin_donnee <- "data/csv_datas_full.csv"
 
 
 # 1 - Import des données --------------------------------------------------
 
-data_tweets <-   read_delim(chemin_donnee,
-                            "\t",
-                            escape_double = FALSE
+data_tweets <-   read.table(file = chemin_donnee,
+                            header = TRUE,
+                            sep = "\t",
+                            comment.char = "",
+                            quote = "\"",
+                            stringsAsFactors = FALSE,
+                            encoding = "UTF-8"
                             )
 
 
@@ -32,6 +37,7 @@ View(data_tweets[, c(5,54)])
 
 # Nettoyage description du Twittos ----------------------------------------
 data_tweets$description <- nettoyage_text(data_tweets$publisher_description)
+
 
 # Recherche méthodo -------------------------------------------------------
 
