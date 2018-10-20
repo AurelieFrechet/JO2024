@@ -1,0 +1,15 @@
+Idée du jour :
+se concentrer sur qui parle et l'influence
+en faire un graphique frise chrnonologique tout con
+
+x : jour
+y : nombre de tweet par jour
+1 point : 1 tweet.
+taille du point : like du tweet
+hauteur du point : nombre de retweets
+couleur du point : groupe (politique, organisateur, etc) attention, une seule couleur à la fois, sinon trop d'info + un twittos peut appartenir à plusieurs catégories
+
+si on a le temps on verra le contenu
+mais ça a l'air déjà drole de voir que Nato a posté sur les JO :p
+
+Avec highcharter ou plotly on peut rajouetr de l'information en passant la souris sur le point : on peut éventuellement faire apparaitre le tweet
