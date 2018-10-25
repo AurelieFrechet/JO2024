@@ -4,10 +4,12 @@
 library(readr)   # Chargement des données
 library(tm)      # Nettoyage du corpus
 library(stringr) # Nettoyage des chaines de caractères
-library(koRpus)
+library(koRpus)  # Lemmatisation
 
 chemin_donnee <- "data/csv_datas_full.csv"
 
+source("R_functions/nettoyage_text.R")
+source("R_functions/lemmatisation.R")
 
 # 1 - Import des données --------------------------------------------------
 
@@ -28,31 +30,27 @@ data_tweets$mentions <- gsub("[[:punct:]]", "", data_tweets$tweet_user_mentions_
 
 
 # 3 - Nettoyage du contenu du tweet ---------------------------------------
-# source : https://rstudio-pubs-static.s3.amazonaws.com/93384_92b6fcd92c5642a2a52e97cd5694b6ab.html
 
-# Mise en UTF-8
-data_tweets$corpus <- nettoyage_text(data_tweets$tweet_text)
+data_tweets$corpus  <- nettoyage_text(data_tweets$tweet_text)
+data_tweets$lemme <- lemmatisation(data_tweets$corpus)
 
-View(data_tweets[, c(5,54)])
+saveRDS(data_tweets, "data/data_tweets1.RDS")
+data_tweets <- readRDS("data/data_tweets1.RDS")
 
-# Nettoyage description du Twittos ----------------------------------------
+View(data_tweets[,c(5,54,55)])
+
+
+# 4 - Nettoyage de la description des twittos -----------------------------
+
+
 data_tweets$description <- nettoyage_text(data_tweets$publisher_description)
+data_tweets$description2 <- lemmatisation(data_tweets$description)
 
 
-# Recherche méthodo -------------------------------------------------------
 
 
-library(quanteda)
-txt <- c(doc1 = "Anne Hidalgo pourrait accepter les Jeux Olympiques à Paris @LaTribune #JO2024 @Anne_Hidalgo  http://t.co/yxhVf2AQ5h",
-         doc2 = "#JO2024: 4,7 milliards de dollars de budget pour Bostonhttp://t.co/IXy4PQnkAX #ambitionolympique par @LesEchos http://t.co/YzjWgHKXmx",
-         doc3 = "\"#GrandParis Amsalem : \"\"Paris n’est pas prêt pour 2024\"\" http://t.co/rx7tpuxhIc #JO2024\"")
-tokens(txt)
-# removing punctuation marks and lowecasing texts
-file <- tokens(char_tolower(txt),
-       remove_punct = TRUE,
-       remove_separators =TRUE,
-       remove_symbols = TRUE,
-       remove_twitter= TRUE,
-       remove_url = TRUE)
+# 5 - Sauvegarde de la bade de travail ------------------------------------
 
+saveRDS(data_tweets, "data/data_tweets2.RDS")
+data_tweets <- readRDS("data/data_tweets2.RDS")
 
