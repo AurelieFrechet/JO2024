@@ -2,18 +2,21 @@
 
 # 0 - Paramètres ----------------------------------------------------------
 library(readr)   # Chargement des données
+library(R.utils)
+library(dplyr)
 library(tm)      # Nettoyage du corpus
 library(stringr) # Nettoyage des chaines de caractères
 library(koRpus)  # Lemmatisation
+library(parallel)
 
 chemin_donnee <- "data/csv_datas_full.csv"
 
-source("R_functions/nettoyage_text.R")
-source("R_functions/lemmatisation.R")
+
+sourceDirectory("R_functions/")
 
 # 1 - Import des données --------------------------------------------------
 
-data_tweets <-   read.table(file = chemin_donnee,
+base_depart <-   read.table(file = chemin_donnee,
                             header = TRUE,
                             sep = "\t",
                             comment.char = "",
@@ -21,36 +24,113 @@ data_tweets <-   read.table(file = chemin_donnee,
                             stringsAsFactors = FALSE,
                             encoding = "UTF-8"
                             )
+str(base_depart) # beaucoup de variables inutiles
+taux_remplissage(base_depart, colnames(base_depart))
 
 
-# 2 - Nettoyage de la ponctuation dans les hashtags et les mentions -------
 
-data_tweets$hashtags <- gsub("[[:punct:]]", "", data_tweets$tweet_used_hashtags_list)
-data_tweets$mentions <- gsub("[[:punct:]]", "", data_tweets$tweet_user_mentions_list)
+# 2 - Création de la base des tweets --------------------------------------
 
+# Selection des variables
 
-# 3 - Nettoyage du contenu du tweet ---------------------------------------
+data_tweets <- base_depart %>%
+  select(tweet_id,
+         tweet_creation_dt,
+         tweet_text,
+         tweet_quote_count,
+         tweet_reply_count,
+         tweet_retweet_count,
+         tweet_favorite_count,
+         tweet_used_hashtags_list,
+         tweet_user_mentions_list,
+         tweet_is_reply,
+         tweet_is_quote_of_tweet,
+         publisher_id)
+
+# Réécriture des mentions et des hashtages
+
+data_tweets$tweet_used_hashtags_list <- gsub("[[:punct:]]", "", data_tweets$tweet_used_hashtags_list)
+data_tweets$tweet_user_mentions_list <- gsub("[[:punct:]]", "", data_tweets$tweet_user_mentions_list)
+
+# Réécriture du corpus du texte
 
 data_tweets$corpus  <- nettoyage_text(data_tweets$tweet_text)
-data_tweets$lemme <- lemmatisation(data_tweets$corpus)
 
-saveRDS(data_tweets, "data/data_tweets1.RDS")
-data_tweets <- readRDS("data/data_tweets1.RDS")
+# traduction en lemme via parralelisation
+no_cores <- detectCores() - 1
+cl<-makeCluster(no_cores)
+clusterEvalQ(cl,library(koRpus))
+test <- parSapply(cl,
+                  data_tweets$corpus, 
+                  lemmatisation)
+stopCluster(cl)
+data_tweets$lemme <- test
+class(data_tweets$corpus)
+# Sauvegarde
 
-View(data_tweets[,c(5,54,55)])
+saveRDS(data_tweets, "data/data_tweets.RDS")
+data_tweets <- readRDS("data/data_tweets.RDS")
+
+#  Création de la base des publishers -------------------------------------
+
+# Sélection des variables
 
 
-# 4 - Nettoyage de la description des twittos -----------------------------
+data_publishers <- base_depart %>%
+  group_by(
+    publisher_id,
+    publisher_name,
+    publisher_nickname,
+    publisher_description,
+    publisher_account_creation_dt
+  ) %>%
+  summarise(
+    jo2024_total_tweets    = n(),
+    nb_followers           = max(publisher_followers_count),
+    nb_friends             = max(publisher_friends_count),
+    nb_listed              = max(publisher_listed_count),
+    nb_favorites           = max(publisher_favourites_count),
+    nb_tweets              = max(publisher_favourites_count),
+    jo2024_total_tweets    = n(),
+    jo2024_total_reply     = sum(tweet_reply_count),
+    jo2024_total_retweet   = sum(tweet_retweet_count),
+    jo2024_total_favorites = sum(tweet_favorite_count)
+  ) %>%
+  mutate(
+    anciennete = as.POSIXlt("20/09/2018 00:00:00",
+                            tz = "UTC",
+                            format = "%d/%m/%Y %H:%M:%S") - as.POSIXlt(
+                              publisher_account_creation_dt,
+                              tz = "UTC",
+                              format = "%d/%m/%Y %H:%M:%S"
+                            )
+  ) %>% 
+  ungroup() %>%
+  as.data.frame()
+
+# Nettoyage de la description
+
+data_publishers$description <- nettoyage_text(data_publishers$publisher_description)
+data_publishers$nwords <- sapply(strsplit(data_publishers$description, " "), length)
+
+# Gestion des descriptions vides
+sum(est_vide(data_publishers$description))
+data_publishers[est_vide(data_publishers$description),] <- "vide"
 
 
-data_tweets$description <- nettoyage_text(data_tweets$publisher_description)
-data_tweets$description2 <- lemmatisation(data_tweets$description)
+# traduction en lemme via parralelisation
+no_cores <- detectCores() - 1
+cl <- makeCluster(no_cores)
+clusterEvalQ(cl, library(koRpus))
+test <- parSapply(cl,
+                  data_publishers$description,
+                  lemmatisation)
+stopCluster(cl)
+data_publishers$lemme_des <- test
 
 
+# Sauvegarde
 
-
-# 5 - Sauvegarde de la bade de travail ------------------------------------
-
-saveRDS(data_tweets, "data/data_tweets2.RDS")
-data_tweets <- readRDS("data/data_tweets2.RDS")
+saveRDS(data_publishers, "data/data_publishers.RDS")
+data_publishers <- readRDS("data/data_publishers.RDS")
 
