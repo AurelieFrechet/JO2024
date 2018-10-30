@@ -1,12 +1,32 @@
 
 # 03_Construction_bulles_de_champ -----------------------------------------
+# Présence du mot "officiel" dans la description
+data_tweets$officiel <- FALSE
+data_tweets[grep(pattern = "officiel", x = data_tweets$description), "officiel"] <- TRUE
 
+# Présence du mot "actu" dans la description
+data_tweets$actu <- FALSE
+data_tweets[grep(pattern = "actu", x = data_tweets$description), "actu"] <- TRUE
+
+# Présence du mot "sport" dans la description
+data_tweets$sport <- FALSE
+data_tweets[grep(pattern = "sport", x = data_tweets$description), "sport"] <- TRUE
+
+# Présence du mot "journalist" dans la description
+data_tweets$journalist <- FALSE
+data_tweets[grep(pattern = "journalist", x = data_tweets$journalist), "journalist"] <- TRUE
+
+# variable segment
+data_tweets = data_tweets %>% mutate(segment=ifelse(officiel==TRUE,"officiel",
+                                                    ifelse(actu==TRUE,"actu",
+                                                           ifelse(sport==TRUE,"sport",
+                                                                  ifelse(journalist==TRUE,"journalist","twittos")))))
 
 # Création d’une table à la maille date -----------------------------------
 data_tweets %>% glimpse()
 
 base_tw = data_tweets %>% 
-  select (tweet_id,tweet_creation_dt,tweet_text,tweet_retweet_count,tweet_favorite_count)
+  select (tweet_id,tweet_creation_dt,tweet_text,tweet_retweet_count,tweet_favorite_count,segment)
 
 ech = base_tw[1:1000,]
 
@@ -37,10 +57,44 @@ maille_jour_tri = maille_jour %>%
 
 
 # 3 - boucle pour ordonner les tweetos ------------------------------------
-compteur = maille_jour_tri %>% 
-  mutate()
-
 maille_jour_tri$count = unlist(lapply(table(maille_jour_tri$tweet_date), function(x){1:x}))
+
+# 4 - test graph ----------------------------------------------------------
+library(plotly)
+# http://plotly-book.cpsievert.me/
+
+plot_ly(
+  x=c(1,2,3),
+  y=c(5,6,7),
+  type="scatter",
+  mode="markers",
+  size=c(1,5,10),
+  marker = list(
+    color=c("red","blue","green")
+  )
+)
+
+
+maille_jour_tri %>% 
+  ggplot(aes(x = tweet_date, y = count, col = segment)) + 
+  geom_point() 
+
+ggplotly()
+
+
+
+plot_ly(
+  x=maille_jour_tri$tweet_date,
+  y=maille_jour_tri$count,
+  text=maille_jour_tri$tweet_text,
+  type="scatter",
+  mode="markers",
+  marker = list(
+    color=c("red","blue","green")
+  )
+)
+
+
 
 
 
