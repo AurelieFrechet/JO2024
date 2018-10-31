@@ -81,7 +81,8 @@ maille_jour_tri %>%
 
 ggplotly()
 
-
+base = maille_jour_tri %>% 
+  dplyr::filter(tweet_date>= as.Date("2017-07-01") & tweet_date <= as.Date("2017-10-01"))
 
 plot_ly(
   x=maille_jour_tri$tweet_date,
