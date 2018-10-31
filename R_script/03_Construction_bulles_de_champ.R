@@ -42,7 +42,7 @@ base_tw$tweet_date = as.Date(base_tw$tweet_creation_dt)
 base_tw %>% glimpse()
 # 1 - compter le nb de tweet par jour -------------------------------------
 maille_jour = base_tw %>%
-  select (tweet_date,tweet_id,tweet_text,tweet_retweet_count,tweet_favorite_count) %>% 
+  select (tweet_date,tweet_id,tweet_text,tweet_retweet_count,tweet_favorite_count, segment) %>% 
   group_by(tweet_date) %>% 
   mutate(nb_tw_par_jour =n()) %>% 
   ungroup()
@@ -59,6 +59,11 @@ maille_jour_tri = maille_jour %>%
 # 3 - boucle pour ordonner les tweetos ------------------------------------
 maille_jour_tri$count = unlist(lapply(table(maille_jour_tri$tweet_date), function(x){1:x}))
 
+maille_jour_tri$size_point <-
+  floor((maille_jour_tri$tweet_retweet_count) / max(maille_jour_tri$tweet_retweet_count) * 100)+ 1
+
+maille_jour_tri$coord <- unlist(
+by(data = floor(maille_jour_tri$size_point/2)+1, maille_jour_tri$tweet_date, cumsum))
 # 4 - test graph ----------------------------------------------------------
 library(plotly)
 # http://plotly-book.cpsievert.me/
@@ -96,6 +101,29 @@ plot_ly(
 )
 
 
+# Plotly ------------------------------------------------------------------
+
+p <- plot_ly(maille_jour_tri, 
+             x = ~tweet_date, 
+             y = ~coord, 
+             # text = ~tweet_text, 
+             type = 'scattergl', 
+             mode = 'markers',
+             marker = list(size = ~size_point, 
+                           opacity = 0.5,
+                           color = ~segment)) %>%
+  layout(title = 'Tweets émis sur les JO2024',
+         xaxis = list(title = "",
+                      showgrid = FALSE),
+         yaxis = list(title = "",
+                      showgrid = FALSE,
+                      zeroline = FALSE,
+                      showline = FALSE,
+                      ticks = '',
+                      showticklabels = FALSE))
+
+p
+# Highcharter -------------------------------------------------------------
 
 
 
