@@ -4,12 +4,12 @@ function(input, output, session) {
     plot_ly(trace_points, 
             x = ~tweet_date, 
             y = ~coord, 
+            color = ~segment2,
             # text = ~tweet_text, 
             type = 'scattergl', 
             mode = 'markers',
             marker = list(size = ~size_point, 
-                          opacity = 0.5,
-                          color = ~segment)) %>%
+                          opacity = 0.5)) %>%
       layout(title = 'Tweets émis sur les JO2024',
              xaxis = list(title = "",
                           showgrid = FALSE),
@@ -41,4 +41,11 @@ function(input, output, session) {
     if (is.null(d)) "Relayout (i.e., zoom) events appear here" else d
   })
   
+  
+  # output$nuage <- renderPlot({
+  #   v <- terms()# tableau term Terdocument matrice  https://shiny.rstudio.com/gallery/word-cloud.html
+  #   wordcloud_rep(names(v), v, scale=c(4,0.5),
+  #                 min.freq = input$freq, max.words=input$max,
+  #                 colors=brewer.pal(8, "Dark2"))
+  # })
 }
