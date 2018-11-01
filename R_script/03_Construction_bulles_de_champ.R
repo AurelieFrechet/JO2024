@@ -59,11 +59,14 @@ maille_jour_tri = maille_jour %>%
 # 3 - boucle pour ordonner les tweetos ------------------------------------
 maille_jour_tri$count = unlist(lapply(table(maille_jour_tri$tweet_date), function(x){1:x}))
 
+#Taille et coordonnées des points
 maille_jour_tri$size_point <-
   floor((maille_jour_tri$tweet_retweet_count) / max(maille_jour_tri$tweet_retweet_count) * 100)+ 1
 
 maille_jour_tri$coord <- unlist(
 by(data = floor(maille_jour_tri$size_point/2)+1, maille_jour_tri$tweet_date, cumsum))
+
+
 # 4 - test graph ----------------------------------------------------------
 library(plotly)
 # http://plotly-book.cpsievert.me/
@@ -123,8 +126,23 @@ p <- plot_ly(maille_jour_tri,
                       showticklabels = FALSE))
 
 p
-# Highcharter -------------------------------------------------------------
 
+
+
+# Sauvegarde des données pour appli ---------------------------------------
+
+# Trace points :
+# x : date du tweet
+# y : coord du point
+# segment : segment du twittos
+# key : id du tweet
+
+saveRDS(maille_jour_tri,  "data/trace_points.RDS")
+
+# Trace nuage 
+# key : id du tweet
+# mots : lemmes du tweet
+# tweet_html : tweet au format html
 
 
 
