@@ -72,14 +72,15 @@ base_tw = data_tweets %>%
 # Retravailler la date ----------------------------------------------------
 
 base_tw$tweet_creation_dt %>% class()
-base_tw$tweet_creation_dt = sort(as.POSIXlt(
+base_tw$tweet_creation_dt = as.POSIXlt(
   x = base_tw$tweet_creation_dt,
   tz = "GMT",
   format = ("%d/%m/%Y %H:%M:%S")
-))
+)
 base_tw$tweet_creation_dt %>% class()
 
 base_tw$tweet_date = as.Date(base_tw$tweet_creation_dt)
+base_tw <- base_tw[order(base_tw$tweet_date),]
 
 # Coordonnées du tweet ----------------------------------------------------
 base_tw %>% glimpse()
@@ -149,7 +150,7 @@ x <- as.Date(c("2015-06-23",
 class(x)
 y <- rep(0, length(text))
 ax = c( )
-ay = c(50, 30, 10, 70, 70, 55, 40, 25, 10)
+ay = c(60, 40, 20, 80, 100, 80, 60, 40, 20)
 xanchor = c("left",
             "left",
             "left",
@@ -229,7 +230,7 @@ p <- plot_ly(
     color = 'transparent',
     line = list(
       color = ~ segment2,
-      width = 3
+      width = 1
     )
   )
 ) %>%
@@ -238,6 +239,10 @@ p <- plot_ly(
     xaxis = list(
       title = "",
       showgrid = FALSE,
+      zeroline = FALSE,
+      showline = FALSE,
+      ticks = '',
+      showticklabels = FALSE,
       rangesilder = list(type = "date")
     ),
     yaxis = list(
@@ -253,7 +258,7 @@ p <- plot_ly(
       y = y,
       text = text,
       showarrow = TRUE,
-      arrowhead = 7,
+      arrowhead = 6,
       xanchor = xanchor,
       ax = y,
       ay = ay
