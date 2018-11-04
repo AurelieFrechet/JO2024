@@ -7,6 +7,7 @@ library(dplyr)
 library(FactoMineR)
 library(factoextra)
 library(tidytext)
+library(topicmodels)
 
 data_publishers <- readRDS("data/data_publishers.RDS")
 str(data_publishers)
@@ -126,7 +127,7 @@ dtm_tf <- DocumentTermMatrix(x = corpus,
 inspect(dtm_tf) #26081 termes
 
 # Nettoyage matrice
-dtm_tf <- removeSparseTerms(dtm_tf, sparse = 0.99)
+dtm_tf <- removeSparseTerms(dtm_tf, sparse = 0.98)
 sort(apply(dtm_tf, 2, sum), decreasing = T)
 
 # 2 - Topic modeling ------------------------------------------------------
@@ -217,17 +218,19 @@ infos_publishers %>% glimpse()
 
 
 # Sélection des variables -------------------------------------------------
+# base = infos_publishers %>% 
+#   select(-publisher_name,-publisher_nickname,-publisher_description,-publisher_account_creation_dt,
+#          -description,-nouveau,-suivre,-faire,-aussi,-tweets,-bien,-twitter,-french,-autre,-grand,
+#          -monde,-vie,-compter,-citoyen,-tout,-aimer,-passionne,-plus,-compte,-groupe,-francais,
+#          -jo2024_total_reply,-jo2024_total_retweet,-jo2024_total_favorites,
+#          -nb_listed)
 base = infos_publishers %>% 
-  select(-publisher_name,-publisher_nickname,-publisher_description,-publisher_account_creation_dt,
-         -description,-nouveau,-suivre,-faire,-aussi,-tweets,-bien,-twitter,-french,-autre,-grand,
-         -monde,-vie,-compter,-citoyen,-tout,-aimer,-passionne,-plus,-compte,-groupe,-francais,
-         -jo2024_total_reply,-jo2024_total_retweet,-jo2024_total_favorites,-jo2024_total_tweets,
-         -nb_listed)
+  select(-publisher_nickname,-publisher_description,-publisher_account_creation_dt,
+         -description,-suivre,-france,-faire,-grand,-vie,-plus,-compte,-nb_listed)
 str(base)
-T1<-Sys.time()
-res_PCA<-PCA(select(base,-c(publisher_id,lemme_des,nwords,termes_NA)), scale.unit = TRUE, ncp = 10, graph = FALSE)
-T2<-Sys.time()
-T2-T1
+
+res_PCA<-PCA(select(base,-c(publisher_id,publisher_name,lemme_des,nwords,termes_NA)), scale.unit = TRUE, ncp = 10, graph = FALSE)
+
 
 # Eigen values
 fviz_eig(res_PCA, addlabels = TRUE ,ncp=30)
@@ -259,6 +262,8 @@ abline(h=c(0), col=c("black"), lty=c(1), lwd=c(1))
 
 # peu de corrélation entre nb de tweet et caractéristiques du tweetos
 
+
+# Contribution des variables aux axes -------------------------------------
 var1 <- facto_summarize(res_PCA, "var", result = c("coord",
                                                    "cos2", "contrib"), axes = 1)
 var2 <-facto_summarize(res_PCA, "var", result = c("coord",
@@ -271,6 +276,7 @@ var4 <-facto_summarize(res_PCA, "var", result = c("coord",
 VAR<-cbind(var1,var2,var3,var4)
 VAR
 
+# coordonnées des individus sur les axes
 PCA_ind<-res_PCA$ind$coord
 
 
@@ -284,7 +290,7 @@ mat_dist<-dist(barycentres,method="euclidean")
 cah<-hclust(mat_dist,method="ward.D",members=NULL)
 
 
-
+# choix du nombre de classes ?
 inertie <- sort(cah$height, decreasing = TRUE)
 plot(inertie[1:20], type = "s", xlab = "Nombre de classes", 
      ylab = "Inertie")
@@ -318,7 +324,6 @@ plot(clusDendro)
 # Lancement des Kmeans ----------------------------------------------------
 km <- kmeans(PCA_ind[,1:10],centers=7 ,nstart=15)$cluster
 
-
 res_fin <-cbind(km,base)
 
 names(res_fin)[1] <- 'CLUSTER'
@@ -326,162 +331,144 @@ names(res_fin)[1] <- 'CLUSTER'
 vol<-data.frame(table(res_fin$CLUSTER))
 vol
 
-test<-filter(data_publishers,nb_followers %in% c(1422658,137792,170844))
+# cluster 4 -> 3 individus :
+CL4<-filter(res_fin,CLUSTER==4)
+# Ce sont les 3 organisateurs qui ont bcp tweeté
+
 # résultat par cluster
 base %>% glimpse()
 z1<-res_fin %>% 
   group_by(CLUSTER) %>% 
   summarise_each (funs(mean), 
+                  jo2024_total_tweets,
                   nb_followers,
                   nb_friends,
                   nb_favorites,
                   nb_tweets,
+                  jo2024_total_reply,
+                  jo2024_total_retweet,
+                  jo2024_total_favorites,
                   anciennete,
                   nwords,
                   lemme_des,
                   description_NA,
-                  culture,
-                  droit,
                   media,
-                  responsable,
                   paris,
                   communication,
                   politique,
                   sport,
-                  tech,
                   digital,
                   journaliste,
                   marketing,
-                  medias,
-                  chef,
-                  projet,
-                  web,
-                  ancien,
-                  economie,
                   social,
-                  france,
                   directeur,
-                  numerique,
                   president,
-                  vice,
-                  rugby,
-                  manager,
-                  entrepreneur,
-                  startup,
-                  instagram,
-                  site,
-                  actu,
+                  tweets,
                   innovation,
                   engager,
-                  conseil,
                   actualite,
-                  business,
+                  monde,
                   team,
-                  art,
-                  ville,
-                  fan,
-                  education,
-                  membre,
-                  charge,
                   officiel,
-                  football,
-                  com,
                   sportif,
-                  adjoindre,
-                  maire,
-                  service,
-                  conseiller,
-                  association,
-                  international,
-                  management,
-                  national,
-                  developpement,
-                  agence,
-                  etudiant,
-                  event,
                   termes_NA
   )
 View(z1)
 
-#avec ce tabkeau, faire pour chaque variable pour chaque classe , 
+write.csv2(z1, file="data/cluster.csv")
+
+
+# Identification des cluster ----------------------------------------------
+# Faire un heatmap avec les variables les + pertinentes
+z1_var = z1 %>% select(#CLUSTER,
+                       description_NA,
+                       media,
+                       paris,
+                       communication,
+                       politique,
+                       sport,
+                       digital,
+                       journaliste,
+                       marketing,
+                       social,
+                       # directeur,
+                       president,
+                       tweets,
+                       # innovation,
+                       engager,
+                       # actualite,
+                       # monde,
+                       # team,
+                       officiel,
+                       sportif
+                       # termes_NA
+                       )
+
+heatmap(as.matrix(z1_var),scale = "column",col=heat.colors(256),main="caracteristique cluster",
+        Rowv = NA,Colv = NA)
+
+# Zoom sur certains cluster
+CL6 = res_fin %>% 
+  select(CLUSTER,publisher_id,publisher_name,lemme_des) %>% 
+  filter(CLUSTER==6)
+View(CL6)  
+
+CL5 = res_fin %>% 
+  select(CLUSTER,publisher_id,publisher_name,lemme_des) %>% 
+  filter(CLUSTER==5)
+View(CL5)  
+View(z1)
+
+#avec ce tableau, faire pour chaque variable pour chaque classe , 
 #l'écart à la moyenne.
 #ca permet d'idenetifier les variables discriminantes
+# + regrouper des cluster
+res_fin$CL_1<- ifelse(res_fin$CLUSTER == 1 | res_fin$CLUSTER == 6, 1, 0) #Média, digital, comm
+res_fin$CL_2<- ifelse(res_fin$CLUSTER == 2 , 1, 0) # Les officiels (maires, ...)
+res_fin$CL_3<- ifelse(res_fin$CLUSTER == 3 , 1, 0) # Les peu actifs
+res_fin$CL_4<- ifelse(res_fin$CLUSTER == 4 , 1, 0) # Les organisateurs
+res_fin$CL_5<- ifelse(res_fin$CLUSTER == 5 | res_fin$CLUSTER == 7, 1, 0) # Les twittos
 
-res_fin$CL_1<- ifelse(res_fin$CLUSTER == 1 , 1, 0)
-res_fin$CL_2<- ifelse(res_fin$CLUSTER == 2 , 1, 0)
-res_fin$CL_3<- ifelse(res_fin$CLUSTER == 3 , 1, 0)
-res_fin$CL_4<- ifelse(res_fin$CLUSTER == 4 , 1, 0)
-res_fin$CL_5<- ifelse(res_fin$CLUSTER == 5 , 1, 0)
-res_fin$CL_6<- ifelse(res_fin$CLUSTER == 6 , 1, 0)
-res_fin$CL_7<- ifelse(res_fin$CLUSTER == 7 , 1, 0)
 
 
 library(rpart)
 library(rpart.plot)
 #permet de voir d'une autre façon les variables
 #discriminant chaque classe
-
-mod_arbre <- rpart(CL_6~
-                     nb_followers+
+z1 %>% glimpse()
+mod_arbre <- rpart(CL_4~
+                     jo2024_total_tweets+
+                   nb_followers+
                    nb_friends+
                    nb_favorites+
                    nb_tweets+
-                  
+                   jo2024_total_reply +
+                   jo2024_total_retweet+
+                   jo2024_total_favorites+
+                   anciennete+
                    description_NA+
-                   culture+
-                  
                    media+
-                   responsable+
-                   
+                   paris+
                    communication+
                    politique+
                    sport+
-                   tech+
                    digital+
                    journaliste+
                    marketing+
-                   medias+
-                   chef+
-                   projet+
-                   web+
-                   
-                   economie+
-                  
-                   numerique+
+                   social+
+                   directeur+
                    president+
-                   
-                   manager+
-                   entrepreneur+
-                   startup+
-                   instagram+
-                   site+
-                   actu+
-                   
+                   tweets+
+                   innovation+
+                   engager+
                    actualite+
-                   
-                   ville+
-                   fan+
-                   
-                   charge+
+                   monde+
+                   # team+
                    officiel+
-                   football+
-                   com+
-                   sportif+
-                   adjoindre+
-                   maire+
-                   
-                   conseiller+
-                   association+
-                   
-                   management+
-                  
-                   agence+
-                   etudiant+
-                   event+
-                   termes_NA
+                   sportif
+                   # termes_NA
                    ,
                    res_fin)
 
 plot_arbre <- rpart.plot(mod_arbre,extra=1 , fallen.leaves=T)
-
 
