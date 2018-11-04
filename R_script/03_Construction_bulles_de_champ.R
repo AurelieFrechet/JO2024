@@ -50,6 +50,8 @@ data_tweets$segment <-
     ),
     length = nrow(data_tweets)
   )
+# Note : joindre segment et nickname utilisateur
+
 
 # 2 - Création de variables pour le tracé des points ----------------------
 
@@ -64,6 +66,9 @@ base_tw = data_tweets %>%
     tweet_text,
     tweet_retweet_count,
     tweet_favorite_count,
+    tweet_used_hashtags_list,
+    tweet_user_mentions_list,
+    lemme,
     segment
   )
 
@@ -80,76 +85,78 @@ base_tw$tweet_creation_dt = as.POSIXlt(
 base_tw$tweet_creation_dt %>% class()
 
 base_tw$tweet_date = as.Date(base_tw$tweet_creation_dt)
-base_tw <- base_tw[order(base_tw$tweet_date),]
+base_tw <- base_tw[order(base_tw$tweet_date), ]
 
 # Coordonnées du tweet ----------------------------------------------------
 base_tw %>% glimpse()
 # a - compter le nb de tweet par jour -------------------------------------
-maille_jour = base_tw %>%
+base_tw = base_tw %>%
   select (
     tweet_date,
     tweet_id,
     tweet_text,
     tweet_retweet_count,
     tweet_favorite_count,
+    tweet_used_hashtags_list,
+    tweet_user_mentions_list,
+    lemme,
     segment
   ) %>%
   group_by(tweet_date) %>%
   mutate(nb_tw_par_jour = n()) %>%
-  ungroup()
+  ungroup() %>%
+  # b - Trier par date et par retweet ----------------------------------------
+arrange(tweet_date, tweet_retweet_count) %>%
+  # c - boucle pour ordonner les tweetos ------------------------------------
+mutate(
+  count = unlist(lapply(table(base_tw$tweet_date),
+                        function(x) {
+                          1:x
+                        })))
 
-str(maille_jour)
-ech = maille_jour_tri[1:1000, ]
 
 
-# b - Trier par date et par retweet ----------------------------------------
-maille_jour_tri = maille_jour %>%
-  arrange(tweet_date, tweet_retweet_count)
+base_tw$size_point =
+  floor((base_tw$tweet_retweet_count) / max(base_tw$tweet_retweet_count) * 200) + 0.1
+base_tw$coord = unlist(by(data = base_tw$tweet_favorite_count+1,
+                          base_tw$tweet_date,
+                          cumsum))
 
 
-# c - boucle pour ordonner les tweetos ------------------------------------
-maille_jour_tri$count = unlist(lapply(table(maille_jour_tri$tweet_date), function(x) {
-  1:x
-}))
-
-#Taille et coordonnées des points
-maille_jour_tri$size_point <-
-  floor((maille_jour_tri$tweet_retweet_count) / max(maille_jour_tri$tweet_retweet_count) * 200 
-  ) + 0.1
-
-maille_jour_tri$coord <- unlist(by(
-  data = floor(maille_jour_tri$size_point/2) + 1,
-  maille_jour_tri$tweet_date,
-  cumsum
-))
 
 
 
 #  d - dates clés ---------------------------------------------------------
 
-text <- c("23 juin 2015 - Paris annonce sa candidature aux JO 2024",
-          "15 septembre 2015 - Dépôt des candidatures : Paris, Los Angeles",
-          "9 février 2016 - Logo dévoilé sur l'Arc de Triomphe",
-          "3 février 2017 - Slogan dévoilé sur la Tour Eiffel",
-          "22 mars 2017 - Régions de France apporte leur soutien à la candidature",
-          "13-17 mai 2017 - La comission d'évaluation du CIO visite Paris",
-          "23-24 juin 2017 - Paris célèbre la journée internationale Olympique",
-          "11 juillet 2017 - La double attribution votée : Paris aura les Jeux",
-          "13 septembre 2017 - L'annonce officielle à Lima")
+text <- c(
+  "23 juin 2015 - Paris annonce sa candidature aux JO 2024",
+  "15 septembre 2015 - Dépôt des candidatures : Paris, Los Angeles",
+  "9 février 2016 - Logo dévoilé sur l'Arc de Triomphe",
+  "3 février 2017 - Slogan dévoilé sur la Tour Eiffel",
+  "22 mars 2017 - Régions de France apporte leur soutien à la candidature",
+  "13-17 mai 2017 - La comission d'évaluation du CIO visite Paris",
+  "23-24 juin 2017 - Paris célèbre la journée internationale Olympique",
+  "11 juillet 2017 - La double attribution votée : Paris aura les Jeux",
+  "13 septembre 2017 - L'annonce officielle à Lima"
+)
 
-class(maille_jour_tri$tweet_date)
-x <- as.Date(c("2015-06-23",
-               "2015-09-15",
-               "2016-02-09",
-               "2017-02-03",
-               "2017-03-22",
-               "2017-05-13",
-               "2017-06-23",
-               "2017-07-11",
-               "2017-09-13"))
+
+x <- as.Date(
+  c(
+    "2015-06-23",
+    "2015-09-15",
+    "2016-02-09",
+    "2017-02-03",
+    "2017-03-22",
+    "2017-05-13",
+    "2017-06-23",
+    "2017-07-11",
+    "2017-09-13"
+  )
+)
 class(x)
 y <- rep(0, length(text))
-ax = c( )
+ax = c()
 ay = c(60, 40, 20, 80, 100, 80, 60, 40, 20)
 xanchor = c("left",
             "left",
@@ -203,35 +210,35 @@ xanchor = c("left",
 
 # Plotly ------------------------------------------------------------------
 
-maille_jour_tri$segment2 <-
+base_tw$segment2 <-
   ifelse(
-    maille_jour_tri$segment == "influenceurs",
+    base_tw$segment == "influenceurs",
     "#0085C7",
     ifelse(
-      maille_jour_tri$segment == "lambdas",
+      base_tw$segment == "lambdas",
       "#000000",
       ifelse(
-        maille_jour_tri$segment == "medias",
+        base_tw$segment == "medias",
         "#F4C300",
-        ifelse(maille_jour_tri$segment == "politiques",
-               "#009F3D","#DF0024"
-        ))))
+        ifelse(base_tw$segment == "politiques",
+               "#009F3D", "#DF0024")
+      )
+    )
+  )
 
 p <- plot_ly(
-  maille_jour_tri,
+  base_tw,
   x = ~ tweet_date,
   y = ~ coord,
-  text = ~tweet_text,
+  text = ~ tweet_text,
   type = 'scattergl',
   mode = 'markers',
   marker = list(
     size = ~ size_point,
-    opacity = 0.5,
+    opacity = 0.7,
     color = 'transparent',
-    line = list(
-      color = ~ segment2,
-      width = 1
-    )
+    line = list(color = ~ segment2,
+                width = 1)
   )
 ) %>%
   layout(
@@ -277,9 +284,6 @@ p
 # segment : segment du twittos
 # key : id du tweet
 
-saveRDS(maille_jour_tri,  "data/trace_points.RDS")
+saveRDS(base_tw,  "data/trace_points.RDS")
 
-# Trace nuage
-# key : id du tweet
-# mots : lemmes du tweet
-# tweet_html : tweet au format html
+

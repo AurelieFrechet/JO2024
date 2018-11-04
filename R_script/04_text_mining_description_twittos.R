@@ -285,6 +285,7 @@ cah<-hclust(mat_dist,method="ward.D",members=NULL)
 
 
 
+
 inertie <- sort(cah$height, decreasing = TRUE)
 plot(inertie[1:20], type = "s", xlab = "Nombre de classes", 
      ylab = "Inertie")
