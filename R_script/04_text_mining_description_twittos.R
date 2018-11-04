@@ -290,7 +290,12 @@ mat_dist<-dist(barycentres,method="euclidean")
 cah<-hclust(mat_dist,method="ward.D",members=NULL)
 
 
+<<<<<<< HEAD
 # choix du nombre de classes ?
+=======
+
+
+>>>>>>> 8a022c82655e3dc7c944be1045f62ac0f36e4b88
 inertie <- sort(cah$height, decreasing = TRUE)
 plot(inertie[1:20], type = "s", xlab = "Nombre de classes", 
      ylab = "Inertie")
@@ -375,7 +380,44 @@ z1<-res_fin %>%
   )
 View(z1)
 
-write.csv2(z1, file="data/cluster.csv")
+
+z1_global<-res_fin %>% 
+  summarise_each (funs(mean), 
+                  jo2024_total_tweets,
+                  nb_followers,
+                  nb_friends,
+                  nb_favorites,
+                  nb_tweets,
+                  jo2024_total_reply,
+                  jo2024_total_retweet,
+                  jo2024_total_favorites,
+                  anciennete,
+                  nwords,
+                  lemme_des,
+                  description_NA,
+                  media,
+                  paris,
+                  communication,
+                  politique,
+                  sport,
+                  digital,
+                  journaliste,
+                  marketing,
+                  social,
+                  directeur,
+                  president,
+                  tweets,
+                  innovation,
+                  engager,
+                  actualite,
+                  monde,
+                  team,
+                  officiel,
+                  sportif,
+                  termes_NA
+  )
+write.csv2(z1, file="data/cluster2.csv")
+write.csv2(z1_global, file="data/cluster2_.csv")
 
 
 # Identification des cluster ----------------------------------------------
@@ -404,7 +446,8 @@ z1_var = z1 %>% select(#CLUSTER,
                        # termes_NA
                        )
 
-heatmap(as.matrix(z1_var),scale = "column",col=heat.colors(256),main="caracteristique cluster",
+colfunc <- colorRampPalette(c("white", "blue"))
+heatmap(as.matrix(z1_var),scale = "column",col = colfunc(15), main="caracteristique cluster",
         Rowv = NA,Colv = NA)
 
 # Zoom sur certains cluster
@@ -425,11 +468,16 @@ View(z1)
 # + regrouper des cluster
 res_fin$CL_1<- ifelse(res_fin$CLUSTER == 1 | res_fin$CLUSTER == 6, 1, 0) #Média, digital, comm
 res_fin$CL_2<- ifelse(res_fin$CLUSTER == 2 , 1, 0) # Les officiels (maires, ...)
-res_fin$CL_3<- ifelse(res_fin$CLUSTER == 3 , 1, 0) # Les peu actifs
+res_fin$CL_3<- ifelse(res_fin$CLUSTER == 3 , 1, 0) # Les twittos
 res_fin$CL_4<- ifelse(res_fin$CLUSTER == 4 , 1, 0) # Les organisateurs
-res_fin$CL_5<- ifelse(res_fin$CLUSTER == 5 | res_fin$CLUSTER == 7, 1, 0) # Les twittos
+res_fin$CL_5<- ifelse(res_fin$CLUSTER == 5 | res_fin$CLUSTER == 7, 1, 0) # Les influenceurs
 
-
+# Combien d'individus par cluster :
+res_fin %>% count(CL_1) #1 309
+res_fin %>% count(CL_2) #1 608
+res_fin %>% count(CL_3) #10 261
+res_fin %>% count(CL_4) #3
+res_fin %>% count(CL_5) #1 760
 
 library(rpart)
 library(rpart.plot)
